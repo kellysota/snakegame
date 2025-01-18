@@ -1,135 +1,163 @@
-from tkinter import *
-from random import randrange
+import time
+import mysql.connector
 
-# Initialize global variables
-players = []  # Store players' snakes and their directions
-scores = []  # Store scores for each player
-current_player = 0  # Index of the current player
-game_over = False
+# Database Connection
+db = mysql.connector.connect(host='localhost', 
+                             user='root',
+                             passwd='Nibizi69..', 
+                             database='test')
+dbc = db.cursor()
 
-# Settings
-arena_size = 500
-snake_size = 10
-food_size = 10
-directions = {'haut': (0, -snake_size), 'bas': (0, snake_size), 'gauche': (-snake_size, 0), 'droite': (snake_size, 0)}
+# Ensuring leaderboard table exists
+dbc.execute('CREATE TABLE IF NOT EXISTS leaderboard (Player_Name VARCHAR(20), Points INT)')
+db.commit()
 
-# Initialize the game arena
-fen = Tk()
-fen.title("Snake Game")
-can = Canvas(fen, width=arena_size, height=arena_size, bg='black')
-can.pack(side=TOP, padx=5, pady=5)
 
-# Initialize food position
-food_x = randrange(0, arena_size - food_size, food_size)
-food_y = randrange(0, arena_size - food_size, food_size)
-
-# Draw the food
-food = can.create_rectangle(food_x, food_y, food_x + food_size, food_y + food_size, outline='green', fill='red')
-
-def create_snake(x, y):
-    return [[x, y], [x - snake_size, y], [x - 2 * snake_size, y]]
-
-def reset_game():
-    global players, scores, current_player, game_over, food_x, food_y
-    players = [
-        {'snake': create_snake(100, 100), 'direction': 'droite', 'alive': True},
-        {'snake': create_snake(300, 300), 'direction': 'gauche', 'alive': True}
-    ]
-    scores[:] = [0] * len(players)
-    current_player = 0
-    game_over = False
-    food_x = randrange(0, arena_size - food_size, food_size)
-    food_y = randrange(0, arena_size - food_size, food_size)
-    can.coords(food, food_x, food_y, food_x + food_size, food_y + food_size)
-    redraw_arena()
-    fen.after(300, move_snake)
-
-def redraw_arena():
-    can.delete('all')
-    can.create_rectangle(food_x, food_y, food_x + food_size, food_y + food_size, outline='green', fill='red')
-    for i, player in enumerate(players):
-        for segment in player['snake']:
-            color = 'blue' if i == 0 else 'yellow'
-            can.create_oval(segment[0], segment[1], segment[0] + snake_size, segment[1] + snake_size, outline='green', fill=color)
-
-def move_snake():
-    global current_player, game_over, food_x, food_y
-    if game_over:
-        return
-
-    player = players[current_player]
-    if not player['alive']:
-        switch_turn()
-        return
-
-    head = player['snake'][0]
-    dx, dy = directions[player['direction']]
-    new_head = [head[0] + dx, head[1] + dy]
-
-    # Check for collisions
-    if (
-        new_head[0] < 0 or new_head[1] < 0 or
-        new_head[0] >= arena_size or new_head[1] >= arena_size or
-        any(new_head == segment for other in players for segment in other['snake'])
-    ):
-        player['alive'] = False
-        switch_turn()
-        return
-
-    # Check for food collision
-    if food_x <= new_head[0] < food_x + food_size and food_y <= new_head[1] < food_y + food_size:
-        player['snake'].insert(0, new_head)  # Grow snake
-        scores[current_player] += 1
-        food_x = randrange(0, arena_size - food_size, food_size)
-        food_y = randrange(0, arena_size - food_size, food_size)
-        can.coords(food, food_x, food_y, food_x + food_size, food_y + food_size)
+def main():
+    print('\t\t////////////////SNAKE\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\')
+    print('\n1. PLAY','\n2. LEADERBOARD','\n3. EXIT')
+    time.sleep(0.4) #delays the execution of following code by the specified time
+    print()
+    a=input('Enter the number corresponding your choice:')
+    if a=='1':
+        time.sleep(0.4)
+        game()
+    elif a=='2':
+        l_board()
+        main()
+    elif a=='3':
+        exit()
     else:
-        player['snake'].insert(0, new_head)
-        player['snake'].pop()
+        time.sleep(0.3)
+        print("Wrong Input, try again")
+        print()
+        time.sleep(0.4)
+        main()
+    
 
-    redraw_arena()
-    switch_turn()
 
-def switch_turn():
-    global current_player, game_over
-    current_player = (current_player + 1) % len(players)
-    print(f"Switching to Player {current_player + 1}")
-    if all(not player['alive'] for player in players):
-        game_over = True
-        display_game_over()
-    else:
-        fen.after(300, move_snake)
+    
+def game():
+    import curses
+    from random import randint
 
-def display_game_over():
-    can.create_text(arena_size // 2, arena_size // 2, text="Game Over", fill='white', font=('Helvetica', 24))
-    for i, score in enumerate(scores):
-        can.create_text(
-            arena_size // 2, arena_size // 2 + (i + 1) * 30,
-            text=f"Player {i + 1} Score: {score}", fill='white', font=('Helvetica', 18)
-        )
+    l_name=input('Enter Name: ')
 
-def change_direction(event):
-    global players
-    key_to_direction = {'z': 'haut', 's': 'bas', 'q': 'gauche', 'd': 'droite'}
-    new_direction = key_to_direction.get(event.keysym)
-    if new_direction:
-        player = players[current_player]
-        current_direction = player['direction']
+    print("Game Starting in 3")
+    time.sleep(0.5)
+    print(2)
+    time.sleep(0.5)
+    print(1)
+    time.sleep(0.5)
+
+    
+    curses.initscr()
+    curses.noecho()
+    curses.curs_set(0)
+    win = curses.newwin(20,60,0,0)
+    win.keypad(1)
+    win.border(0)
+    win.nodelay(1)
+
+    snake = [(4,10),(4,9),(4,8)]
+    food = (10,20)
+
+    ESC = 27
+    key = curses.KEY_RIGHT
+    score = 0
+    win.addch(food[0],food[1],"0")
+    while key!= ESC:
+        win.addstr(0,2,"score " + str(score) + " ")
+        win.timeout(150)
+
+        prev_key = key
+        event = win.getch()
+        key = event if event !=1 else prev_key
+
+        if key not in [curses.KEY_LEFT,curses.KEY_RIGHT,curses.KEY_UP,curses.KEY_DOWN,ESC]:
+            key = prev_key
+
+    # Calculate next coordinate
+        y = snake[0][0]
+        x = snake[0][1]
+
+        if key == curses.KEY_DOWN:
+            y+=1
+        if key == curses.KEY_UP:
+            y-=1
+        if key == curses.KEY_LEFT:
+            x-=1
+        if key == curses.KEY_RIGHT:
+            x+=1
+        snake.insert(0,(y,x))
+
+    # Check border collision
+        if y==0: break
+        if x==0: break
+        if x==59: break
+        if y==19: break
+
+        # if snake runs over itself
+        if snake[0] in snake[1:]: break
+
+        # if snake has eaten the food
+        if snake[0] == food:
+            score+=1
+            food = ()
+            while food == ():
+                food = (randint(1,18), randint(1,58))
+                if food in snake:
+                    food()
+            win.addch(food[0],food[1],"0")
+
+        else:
+            # moving the snake
+            last = snake.pop()
+            win.addch(last[0],last[1]," ")
+
+        win.addch(snake[0][0],snake[0][1],"*")
         
-        if (directions[new_direction][0] + directions[current_direction][0] != 0 or
-                directions[new_direction][1] + directions[current_direction][1] != 0):
-            player['direction'] = new_direction
 
-# Reset and start the game
-reset_game()
+    
+    curses.endwin()
+    print()
+    print()
+    time.sleep(0.5)
+    
+    # Update leaderboard
+    try:
+        dbc.execute('SELECT Points FROM leaderboard WHERE Player_Name = %s', (l_name,))
+        res = dbc.fetchone()
+        if res:
+            new_score = res[0] + score
+            dbc.execute('UPDATE leaderboard SET Points = %s WHERE Player_Name = %s', (new_score, l_name))
+        else:
+            dbc.execute('INSERT INTO leaderboard (Player_Name, Points) VALUES (%s, %s)', (l_name, score))
+        db.commit()
+    
+    except mysql.connector.Error as err:
+        print(f"Database error: {err}")
+        db.rollback()
 
-# Buttons and bindings
-b1 = Button(fen, text='Nouvelle Partie', command=reset_game, bg='black', fg='green')
-b1.pack(side=LEFT, padx=5, pady=5)
+    print(f"Score = {score}")
+    print("Exiting...")
+    time.sleep(1)
 
-b2 = Button(fen, text='Quitter', command=fen.destroy, bg='black', fg='green')
-b2.pack(side=RIGHT, padx=5, pady=5)
 
-fen.bind('<KeyPress>', change_direction)
-fen.after(300, move_snake)
-fen.mainloop()
+def l_board():
+    print('\t\t////////////////Leaderboard\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\')
+
+    dbc.execute('select * from leaderboard order by Points desc')
+    res=dbc.fetchall()
+
+    if len(res)==0:
+        print("No player yet")
+    else:
+        for x in res:
+            print(x)
+    time.sleep(2)
+
+
+
+# Start the program
+main()
